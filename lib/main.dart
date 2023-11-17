@@ -1,57 +1,61 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'viacep.dart';
-
+import 'Viacep.dart';
 
 void main() {
   runApp(MyApp());
 }
+class MyApp extends StatefulWidget {
+  @override
+  State<MyApp> createState() => _MyAppState();
+}
 
-class MyApp extends StatelessWidget {
+class _MyAppState extends State<MyApp> {
+  final ListaDeFavoritos listaDeFavoritos = ListaDeFavoritos();
+  Color tema = Colors.blue;
+
+  void alterarTema(Color novaCor) {
+    setState(() {
+      tema = novaCor;
+    });
+  }
    @override
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       home: Builder(
-        builder: (context) => MainApp(),
+        builder: (context) => MainApp(listaDeFavoritos: listaDeFavoritos, 
+        tema: tema, alterarTema: alterarTema),
       ),
     );
   }
 }
 
 class MainApp extends StatefulWidget {
+  final ListaDeFavoritos listaDeFavoritos;
+   final Color tema;
+  final Function(Color novaCor) alterarTema;
+   MainApp({Key? key, required this.listaDeFavoritos, 
+   required this.tema, required this.alterarTema}) : super(key: key);
   @override
   _MainAppState createState() => _MainAppState();
 }
 // Estado do Widget principal
 class _MainAppState extends State<MainApp> {
   final controladorTexto = TextEditingController();
-  Color tema = Colors.blue;
-  ListaDeFavoritos listaDeFavoritos = ListaDeFavoritos();
-  // Método para alterar o tema
-  void alterarTema(Color novaCor) {
-    setState(() {
-      tema = novaCor;
-    });
-  }
+ 
+  
 // Método para navegar para a tela de favoritos
-  void _click(BuildContext context) {
+  void _click(BuildContext context) {  
     Navigator.push(context, 
-    MaterialPageRoute(builder: (context) => Favoritos(listaDeFavoritos: ListaDeFavoritos()),),);
+    MaterialPageRoute(builder: (context) => Favoritos(listaDeFavoritos: widget.listaDeFavoritos),),);
   }
   @override
   Widget build(BuildContext context) {
-   Icon icon2 = Icon(Icons.favorite, color: Colors.red);
-
-if (tema == Colors.red) {
-  icon2 = Icon(Icons.favorite, color: Colors.orange,);
-}
-
-   
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
-        colorScheme: ColorScheme.light(primary: tema),
+        colorScheme: ColorScheme.light(primary: widget.tema),
       ),
       home: Scaffold(
         appBar: AppBar(
@@ -59,22 +63,22 @@ if (tema == Colors.red) {
           title: const Text('IFMS - Maps'),
           actions: [
             IconButton(
-              onPressed: () => _click(context),
-            
-              icon: icon2,
+          onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (context) => Favoritos(listaDeFavoritos: widget.listaDeFavoritos),),),
+              icon: Icon(Icons.favorite, color: widget.tema == Colors.red ? Colors.orange : Colors.red),
             ),
           ],
         ),
-        body: Tela1(alterarTema: alterarTema, controladorTexto: controladorTexto),
+        body: Tela1(alterarTema: widget.alterarTema, controladorTexto: controladorTexto, listaDeFavoritos: widget.listaDeFavoritos,),
       ),
     );
   }
 }
 
 class Tela1 extends StatelessWidget {
-  const Tela1({Key? key, required this.controladorTexto, required this.alterarTema}) : super(key: key);
+  const Tela1({Key? key, required this.controladorTexto, required this.alterarTema, required this.listaDeFavoritos}) : super(key: key);
   final TextEditingController controladorTexto;
   final Function(Color novaCor) alterarTema;
+  final ListaDeFavoritos listaDeFavoritos;
 
   @override
   Widget build(BuildContext context) {
@@ -113,7 +117,7 @@ class Tela1 extends StatelessWidget {
             children: [
               const Text('Pesquisar CEP'),
               CampoTexto(controladorTexto),
-              BtConsulta(controladorTexto),
+              BtConsulta(controladorTexto, listaDeFavoritos),
             ],
           ),
         ],
@@ -121,42 +125,40 @@ class Tela1 extends StatelessWidget {
     );
   }
 }
+
 // Botão de consulta para pesquisar CEP
 class BtConsulta extends StatelessWidget {
-  const BtConsulta(this.controladorTexto, {Key? key}) : super(key: key);
-
+  const BtConsulta(this.controladorTexto, this.listaDeFavoritos, {Key? key}) : super(key: key);
   final TextEditingController controladorTexto;
+  final ListaDeFavoritos listaDeFavoritos;
 
-  void click(BuildContext context) async{
+  void click(BuildContext context) async {
     print(controladorTexto.text);
- ViaCep enderecoFuturo = await consultaCep(controladorTexto.text);
-   
-    
-    
+    ViaCep enderecoFuturo = await consultaCep(controladorTexto.text);
     Navigator.push(
-  context,
-  MaterialPageRoute(
-    builder: (context) =>  Endereco(viacepdata: enderecoFuturo,),
+      context,
+      MaterialPageRoute(
+        builder: (context) => Endereco(
+          viacepdata: enderecoFuturo,
+          listaDeFavoritos: listaDeFavoritos,
+        ),
       ),
     );
   }
-  
+
   @override
   Widget build(BuildContext context) {
-       return ElevatedButton(
+    return ElevatedButton(
       onPressed: () => click(context),
-      child: const Text('Pesquisar'),
+      child: Text('Consultar'),
     );
   }
 }
 
 
-
 class CampoTexto extends StatelessWidget {
   const CampoTexto(this.controladorTexto, {Key? key}) : super(key: key);
-
   final TextEditingController controladorTexto;
-
   @override
   Widget build(BuildContext context) {
     return Padding(
@@ -174,22 +176,14 @@ class CampoTexto extends StatelessWidget {
 }
 
 class Favoritos extends StatefulWidget {
- 
   final ListaDeFavoritos listaDeFavoritos;
-
-  const Favoritos({super.key, required this.listaDeFavoritos});
-
+  Favoritos({required this.listaDeFavoritos, });
   @override
   State<Favoritos> createState() => _FavoritosState();
 }
-
 class _FavoritosState extends State<Favoritos> {
-  ListaDeFavoritos listaDeFavoritos = ListaDeFavoritos();
-
-
   @override
   Widget build(BuildContext context) {
-    
     return Scaffold(
       appBar: AppBar(title: const Text('Endereços Favoritos')),
       body: widget.listaDeFavoritos.cepFavList.isEmpty
@@ -200,17 +194,32 @@ class _FavoritosState extends State<Favoritos> {
               itemCount: widget.listaDeFavoritos.cepFavList.length,
               itemBuilder: (context, index) {
                 ViaCep cep = widget.listaDeFavoritos.cepFavList[index];
-                return ListTile(
-                  title: Text(cep.cep),
-                  subtitle: Text(cep.localidade),
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => Endereco(viacepdata: cep),
-                      ),
-                    );
-                  },
+                
+                return 
+                
+                Container(
+                  decoration: BoxDecoration(
+                    border: Border.all(color: Colors.black),
+                  ),
+                 
+                  child: ListTile(
+                    title: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text('${cep.cep}  '),
+                        Text('${cep.localidade}'),
+                      ],
+                    ),
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => Endereco(viacepdata: cep,
+                          listaDeFavoritos: widget.listaDeFavoritos,)
+                        ),
+                      );
+                    },
+                  ),
                 );
               },
             ),
@@ -218,18 +227,18 @@ class _FavoritosState extends State<Favoritos> {
   }
 }
 
-
 // Tela de exibição de endereço
 class Endereco extends StatefulWidget {
-  const Endereco({Key? key, required this.viacepdata}) : super(key: key);
+  const Endereco({Key? key, required this.viacepdata, required this.listaDeFavoritos}) : super(key: key);
   final ViaCep viacepdata;
+  final ListaDeFavoritos listaDeFavoritos;
   @override
-  State<Endereco> createState() => _EnderecoState();
+  State<Endereco> createState() => _EnderecoState(listaDeFavoritos);
 }
 // Estado da tela de endereço
 class _EnderecoState extends State<Endereco> {
- ListaDeFavoritos listaDeFavoritos = ListaDeFavoritos();
-
+   ListaDeFavoritos listaDeFavoritos;
+  _EnderecoState(this.listaDeFavoritos);
   Widget linha(String label, String valor) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -238,17 +247,13 @@ class _EnderecoState extends State<Endereco> {
       ],
     );
   }
-
   @override
   Widget build(BuildContext context) {
-
-    return Scaffold(
-      
+    return Scaffold(  
       appBar: AppBar( title: const Text('     IFMS Maps - Detalhes'),),
       body: Center(
       child: Column(
-      mainAxisAlignment: MainAxisAlignment.center,
-     
+      mainAxisAlignment: MainAxisAlignment.center,  
       children: [
         linha('CEP: ', widget.viacepdata.cep),
         linha('', widget.viacepdata.logradouro),
@@ -257,20 +262,19 @@ class _EnderecoState extends State<Endereco> {
         linha('UF: ', widget.viacepdata.uf),], 
       ),
       ),
-       floatingActionButton: FloatingActionButton(
-         onPressed: () {
-           String cepMsg = 'CEP ${widget.viacepdata.cep}';
-          if (listaDeFavoritos.favorito(widget.viacepdata)) {
-            listaDeFavoritos.removerFavorito(widget.viacepdata);
-            _mostrarAlerta('Removido dos Favoritos', cepMsg);
-          } else {
-            listaDeFavoritos.adicionarFavorito(widget.viacepdata);
-             print(listaDeFavoritos._cepFavList.length,);
-             _mostrarAlerta('Adicionado aos Favoritos', cepMsg);   
-          }
-          setState(() {}); 
-        },
-        
+     floatingActionButton: FloatingActionButton(
+  onPressed: () async {
+    String cepMsg = 'CEP ${widget.viacepdata.cep}';
+    if (widget.listaDeFavoritos.favorito(widget.viacepdata)) {
+      widget.listaDeFavoritos.removerFavorito(widget.viacepdata);
+      _mostrarAlerta('Removido dos Favoritos', cepMsg);
+    } else {
+      widget.listaDeFavoritos.adicionarFavorito(widget.viacepdata);
+      print(widget.listaDeFavoritos._cepFavList.length);
+      _mostrarAlerta('Adicionado aos Favoritos', cepMsg);
+    }
+    setState(() {});
+  },
         child: Icon(
           Icons.favorite,
           color: listaDeFavoritos.favorito(widget.viacepdata)
@@ -278,8 +282,7 @@ class _EnderecoState extends State<Endereco> {
               : Colors.white,
         ),
       ),
-    );
-    
+    );  
   }
   void _mostrarAlerta(String acao, String cepMsg) {
     showDialog(
@@ -301,25 +304,16 @@ class _EnderecoState extends State<Endereco> {
   }
 }
 
-
-
-
-
 class ListaDeFavoritos {
   final List<ViaCep> _cepFavList = [];
-
   List<ViaCep> get cepFavList => _cepFavList;
-
   void adicionarFavorito(ViaCep cepFav) {
     _cepFavList.add(cepFav);
   }
-
   void removerFavorito(ViaCep cepFav) {
     _cepFavList.remove(cepFav);
   }
-
   bool favorito(ViaCep cepFav) {
     return _cepFavList.contains(cepFav);
   }
 }
-
