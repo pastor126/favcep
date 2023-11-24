@@ -14,7 +14,7 @@ class CampoTexto extends StatelessWidget {
           FilteringTextInputFormatter.allow(RegExp(r"[\d.]")),
           LengthLimitingTextInputFormatter(8),
         ],
-        decoration: InputDecoration(border: OutlineInputBorder(), hintText: 'CEP'),
+        decoration:const InputDecoration(border: OutlineInputBorder(), hintText: 'CEP'),
       ),
     );
   }
